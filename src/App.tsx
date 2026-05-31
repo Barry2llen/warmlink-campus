@@ -29,8 +29,9 @@ import {
 
 import { Button } from "@/components/ui/button"
 import { CampusAmap } from "@/components/CampusAmap"
+import { analyzePublishDraftWithGemini, hasGeminiApiKey } from "@/lib/llm/gemini"
 import { detectPrivacy, redactPrivacy } from "@/lib/privacy"
-import type { Area, Event, EventStatus, EventType, RiskAlert, Urgency, User } from "@/lib/types"
+import type { Area, Event, EventStatus, EventType, LLMPublishResult, RiskAlert, Urgency, User } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
 const eventTypeMeta: Record<EventType, { label: string; icon: typeof Package; tone: string; short: string }> = {
@@ -530,11 +531,37 @@ function HomePage({ events, draft, setDraft }: { events: Event[]; draft: string;
 function PublishPage({ draft, setDraft, onPublish }: { draft: string; setDraft: (value: string) => void; onPublish: (event: Event) => void }) {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
-  const [analysisStarted, setAnalysisStarted] = useState(false)
+  const [analysisState, setAnalysisState] = useState<"idle" | "loading" | "success" | "local" | "error">("idle")
+  const [analysisError, setAnalysisError] = useState("")
+  const [generated, setGenerated] = useState<{ key: string; result: LLMPublishResult } | null>(null)
   const [published, setPublished] = useState(false)
   const areaHint = searchParams.get("area")
-  const result = useMemo(() => analyzeDraft(draft, areaHint), [areaHint, draft])
+  const requestKey = `${draft}\n${areaHint ?? ""}`
+  const fallbackResult = useMemo(() => analyzeDraft(draft, areaHint), [areaHint, draft])
+  const result = generated?.key === requestKey ? generated.result : fallbackResult
   const privacyText = redactPrivacy(draft)
+  const hasRealAi = hasGeminiApiKey()
+
+  const generateAnalysis = async () => {
+    setAnalysisError("")
+    setAnalysisState("loading")
+
+    if (!hasRealAi) {
+      setGenerated({ key: requestKey, result: fallbackResult })
+      setAnalysisState("local")
+      return
+    }
+
+    try {
+      const aiResult = await analyzePublishDraftWithGemini({ rawText: draft, hintAreaId: areaHint ?? undefined }, areas)
+      setGenerated({ key: requestKey, result: aiResult })
+      setAnalysisState("success")
+    } catch (error) {
+      setGenerated({ key: requestKey, result: fallbackResult })
+      setAnalysisError(error instanceof Error ? error.message : "Gemini 调用失败，已回退到本地规则。")
+      setAnalysisState("error")
+    }
+  }
 
   const submit = () => {
     const newEvent: Event = {
@@ -579,10 +606,13 @@ function PublishPage({ draft, setDraft, onPublish }: { draft: string; setDraft: 
                 </button>
               ))}
             </div>
-            <Button className="mt-5 h-12 w-full rounded-full" onClick={() => setAnalysisStarted(true)}>
+            <Button className="mt-5 h-12 w-full rounded-full" onClick={generateAnalysis} disabled={analysisState === "loading"}>
               <Sparkles data-icon="inline-start" />
-              AI 生成互助卡片
+              {analysisState === "loading" ? "AI 正在生成..." : "AI 生成互助卡片"}
             </Button>
+            <p className="mt-3 text-center text-xs text-[var(--color-muted)]">
+              {hasRealAi ? "已检测到 Gemini API Key，将优先调用真实模型。" : "未配置 Gemini API Key，当前使用本地规则生成。"}
+            </p>
           </div>
           <div className="rounded-3xl border border-[var(--color-hairline)] bg-[var(--color-surface-soft)] p-5">
             <h3 className="flex items-center gap-2 font-semibold">
@@ -598,10 +628,17 @@ function PublishPage({ draft, setDraft, onPublish }: { draft: string; setDraft: 
             <div className="mt-4 flex flex-col gap-3">
               {["正在理解你的需求", "正在判断互助类型", "正在生成发布标题", "正在检查隐私风险", "正在匹配附近可帮助的同学"].map((step, index) => (
                 <div key={step} className="flex items-center gap-3 rounded-2xl bg-[var(--color-surface-soft)] p-3 text-sm">
-                  {analysisStarted || index < 2 ? <CheckCircle2 className="text-[#15803d]" data-icon="inline-start" /> : <CircleGauge className="text-[var(--color-muted-soft)]" data-icon="inline-start" />}
+                  {analysisState !== "idle" || index < 2 ? <CheckCircle2 className="text-[#15803d]" data-icon="inline-start" /> : <CircleGauge className="text-[var(--color-muted-soft)]" data-icon="inline-start" />}
                   {step}
                 </div>
               ))}
+            </div>
+            <div className="mt-4 rounded-2xl bg-[var(--color-surface-soft)] p-3 text-sm leading-6 text-[var(--color-muted)]">
+              {analysisState === "success" ? "真实 Gemini 模型已生成本次互助卡片。" : null}
+              {analysisState === "local" ? "未配置有效 Gemini Key，已使用本地规则生成。" : null}
+              {analysisState === "error" ? `Gemini 调用失败，已回退到本地规则。${analysisError}` : null}
+              {analysisState === "loading" ? "正在请求 Gemini，请稍候。" : null}
+              {analysisState === "idle" ? "点击生成后，系统会优先使用 Gemini；不可用时自动回退本地规则。" : null}
             </div>
           </div>
           <GeneratedCard result={result} />
@@ -681,10 +718,11 @@ function analyzeDraft(raw: string, areaHint: string | null) {
       "线下交接请选择图书馆门厅、食堂门口等公共区域。",
       urgency === "high" ? "高紧急事项建议同步通知熟悉同学或学校相关部门。" : "涉及借用物品时建议明确归还时间和物品状态。",
     ],
+    reasoning: "本地规则根据关键词、区域提示和隐私检测生成发布草稿。",
   }
 }
 
-function GeneratedCard({ result }: { result: ReturnType<typeof analyzeDraft> }) {
+function GeneratedCard({ result }: { result: LLMPublishResult }) {
   const TypeIcon = eventTypeMeta[result.type].icon
   return (
     <div className="rounded-[28px] border border-[var(--color-hairline)] bg-white p-5 shadow-[0_12px_34px_rgba(0,0,0,0.05)]">

@@ -182,6 +182,7 @@ npm run lint
 
 ```bash
 VITE_GEMINI_API_KEY=your-key-here
+VITE_GEMINI_MODEL=gemini-2.5-flash
 VITE_AMAP_KEY=your-amap-web-jsapi-key
 VITE_AMAP_SECURITY_CODE=your-amap-security-js-code
 ```
@@ -200,11 +201,12 @@ Copy-Item .env.example .env.local
 
 说明：
 
-- 当前前端 Demo 默认不依赖真实 Gemini API Key。
-- `VITE_GEMINI_API_KEY` 是为后续接入真实 LLM 服务预留。
+- `VITE_GEMINI_API_KEY` 配置后，AI 发布页会优先调用 Gemini 生成结构化互助卡片。
+- `VITE_GEMINI_MODEL` 默认使用 `gemini-2.5-flash`。
+- 未配置有效 Gemini Key 或调用失败时，AI 发布页会自动回退到本地规则生成，避免演示中断。
 - `/map` 真实地图依赖高德 Web 端 JS API Key。
 - `VITE_AMAP_SECURITY_CODE` 为高德 JS API 安全密钥，开发演示可放在前端环境变量中；正式生产建议改为代理转发或服务端配置。
-- 若接入真实模型，生产环境不应在前端直接暴露 API Key，应改为后端代理或 Serverless API。
+- 生产环境不应在前端直接暴露 Gemini API Key，应改为后端代理或 Serverless API。
 
 ## 推荐演示路径
 
@@ -385,8 +387,8 @@ LLM 发布解析结果结构定义，包含：
 
 当前实现分为两层：
 
-1. 可演示层：`analyzeDraft` 使用本地规则完成分类、标题、描述、紧急程度、地点、标签和安全提醒。
-2. 扩展层：`LLM_RESPONSE_JSON_SCHEMA` 已定义真实模型输出结构，后续可替换为 Gemini、OpenAI 或校内部署模型。
+1. 真实模型层：配置 `VITE_GEMINI_API_KEY` 后，`src/lib/llm/gemini.ts` 会调用 Gemini，并通过 JSON Schema 约束输出。
+2. 兜底演示层：未配置 Key 或调用失败时，`analyzeDraft` 使用本地规则完成分类、标题、描述、紧急程度、地点、标签和安全提醒。
 
 建议后续真实接入方式：
 
