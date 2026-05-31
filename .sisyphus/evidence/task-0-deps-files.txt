@@ -1,0 +1,36 @@
+Dependencies added via `npm install`:
+- `zustand`
+- `@google/genai`
+- `@fontsource/inter`
+- `sonner`
+
+Verified `package.json` still keeps scripts unchanged:
+- `dev`: `vite`
+- `build`: `tsc -b && vite build`
+- `lint`: `eslint .`
+- `preview`: `vite preview`
+
+Removed template files:
+- `src/App.tsx`
+- `src/App.css`
+- `src/assets/react.svg`
+- `src/assets/vite.svg`
+- `public/icons.svg`
+
+Preserved required files:
+- `src/assets/hero.png`
+- `src/lib/utils.ts`
+- `src/components/ui/button.tsx`
+- `public/favicon.svg`
+- `vite.config.ts`
+- `tsconfig.json`
+- `tsconfig.app.json`
+- `tsconfig.node.json`
+- `eslint.config.js`
+
+Created/updated for T0:
+- `src/main.tsx`
+- `src/styles/globals.css`
+- `.env.example`
+- `.gitignore`
+- `README.md`

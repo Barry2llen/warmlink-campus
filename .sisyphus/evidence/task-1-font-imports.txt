@@ -1,0 +1,6 @@
+
+src\styles\globals.css:1:@import "@fontsource/inter/400.css";
+src\styles\globals.css:2:@import "@fontsource/inter/500.css";
+src\styles\globals.css:3:@import "@fontsource/inter/600.css";
+src\styles\globals.css:4:@import "@fontsource/inter/700.css";
+

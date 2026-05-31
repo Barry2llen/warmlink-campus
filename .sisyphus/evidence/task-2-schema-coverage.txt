@@ -1,0 +1,4 @@
+Select-String -Path "src\lib\llm\schema.ts" -Pattern 'type|title|description|urgency|areaId|tags|privacyRisks|safetyTips|suggestedHelpers'
+
+Result:
+schema coverage matches: 65

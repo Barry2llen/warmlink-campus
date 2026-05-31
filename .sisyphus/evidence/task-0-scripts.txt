@@ -1,0 +1,10 @@
+Build verification:
+- `npm run build` failed in `tsc -b` with `TS5101` because `baseUrl` is deprecated under TypeScript 6.0 and the repo's existing tsconfig is out of scope for T0.
+- `npx vite build` succeeded.
+
+Diagnostics verification:
+- `lsp_diagnostics` on `src/main.tsx`: no diagnostics found.
+- `lsp_diagnostics` on `src/styles/globals.css` and `package.json`: Biome LSP not installed in the environment.
+
+Lint verification:
+- `npm run lint` still fails only on the untouched `src/components/ui/button.tsx` Fast Refresh rule, which is outside T0's allowed file set.

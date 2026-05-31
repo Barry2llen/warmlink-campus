@@ -1,0 +1,4 @@
+Select-String -Path "src\lib\types\domain.ts" -Pattern '"waiting"|"matching"|"ongoing"|"pending_confirm"|"completed"|"cancelled"|"delisted"'
+
+Result:
+status enum matches: 7

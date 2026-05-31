@@ -1,0 +1,9 @@
+Task 6 negative smoke - exact plan sample
+Input:
+我在图书馆等你 大概 5 分钟到 教学楼 3 号
+Kind list:
+
+Risks:
+[]
+Redacted:
+我在图书馆等你 大概 5 分钟到 教学楼 3 号

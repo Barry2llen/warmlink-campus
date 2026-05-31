@@ -1,0 +1,40 @@
+Task 6 positive smoke - exact plan sample
+Input:
+联系 13912345678 微信:abcdef123 QQ:123456789 学号 2021123456 银行卡 6222020012345678901 1号楼101室
+Kind list:
+phone, wechat, qq, studentId, bankCard, dorm
+Risks:
+[
+  {
+    "kind": "phone",
+    "matched": "13912345678",
+    "advice": "保护个人手机号，避免公开联系方式。"
+  },
+  {
+    "kind": "wechat",
+    "matched": "abcdef123",
+    "advice": "建议确认互助意向后再交换微信/QQ。"
+  },
+  {
+    "kind": "qq",
+    "matched": "123456789",
+    "advice": "建议确认互助意向后再交换微信/QQ。"
+  },
+  {
+    "kind": "studentId",
+    "matched": "2021123456",
+    "advice": "隐藏学号，避免身份信息被公开。"
+  },
+  {
+    "kind": "bankCard",
+    "matched": "6222020012345678901",
+    "advice": "银行卡号绝不要公开发布。"
+  },
+  {
+    "kind": "dorm",
+    "matched": "1号楼101室",
+    "advice": "宿舍信息建议只保留楼栋，隐藏具体房间。"
+  }
+]
+Redacted:
+联系 [已隐藏] 微信:[已隐藏] QQ:[已隐藏] 学号 [已隐藏] 银行卡 [已隐藏] [已隐藏]
