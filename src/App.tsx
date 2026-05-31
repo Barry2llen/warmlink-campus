@@ -394,6 +394,7 @@ function PageShell({ children, className }: { children: React.ReactNode; classNa
 
 function HomePage({ events, draft, setDraft }: { events: Event[]; draft: string; setDraft: (value: string) => void }) {
   const navigate = useNavigate()
+  const [heroArea, setHeroArea] = useState("library")
   const stats = [
     ["今日互助", "128", "次"],
     ["平均响应", "9", "分钟"],
@@ -439,17 +440,27 @@ function HomePage({ events, draft, setDraft }: { events: Event[]; draft: string;
           </div>
         </div>
         <div className="relative min-h-[430px] overflow-hidden rounded-[32px] border border-[var(--color-hairline-soft)] bg-[var(--color-surface-soft)] p-5">
-          <div className="absolute left-8 top-8 rounded-3xl bg-white p-5 shadow-[var(--shadow-card-hover)]">
+          <CampusAmap
+            areas={areas}
+            selectedAreaId={heroArea}
+            activeTypeLabel={null}
+            onSelectArea={setHeroArea}
+            compact
+            showControls={false}
+            className="absolute inset-0 h-full rounded-[32px] border-0"
+          />
+          <div className="pointer-events-none absolute inset-0 bg-white/35" />
+          <div className="absolute left-8 top-8 rounded-3xl bg-white/95 p-5 shadow-[var(--shadow-card-hover)] backdrop-blur">
             <Badge tone="bg-[#fee2e2] text-[#b91c1c]">高优先级</Badge>
             <h3 className="mt-3 text-xl font-semibold">图书馆借用雨伞</h3>
             <p className="mt-2 max-w-[240px] text-sm leading-6 text-[var(--color-muted)]">AI 已匹配附近 2 位可帮助同学</p>
           </div>
-          <div className="absolute right-5 top-28 rounded-3xl bg-white p-5 shadow-[var(--shadow-card-hover)]">
+          <div className="absolute right-5 top-28 rounded-3xl bg-white/95 p-5 shadow-[var(--shadow-card-hover)] backdrop-blur">
             <MapPin className="mb-3 text-[var(--color-primary)]" data-icon="inline-start" />
             <p className="text-sm text-[var(--color-muted)]">校园温度指数</p>
             <p className="mt-1 text-4xl font-bold">92</p>
           </div>
-          <div className="absolute bottom-7 left-6 right-6 rounded-3xl bg-white p-5 shadow-[var(--shadow-card-hover)]">
+          <div className="absolute bottom-7 left-6 right-6 rounded-3xl bg-white/95 p-5 shadow-[var(--shadow-card-hover)] backdrop-blur">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-[var(--color-muted)]">实时互助动态</p>
@@ -460,7 +471,6 @@ function HomePage({ events, draft, setDraft }: { events: Event[]; draft: string;
               </Link>
             </div>
           </div>
-          <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_20%_20%,rgba(255,56,92,0.16),transparent_32%),radial-gradient(circle_at_85%_75%,rgba(255,179,71,0.2),transparent_30%)]" />
         </div>
       </section>
 
@@ -504,13 +514,15 @@ function HomePage({ events, draft, setDraft }: { events: Event[]; draft: string;
         </div>
       </section>
 
-      <Link to="/map" className="mt-14 grid gap-6 rounded-[28px] border border-[var(--color-hairline)] bg-[var(--color-surface-soft)] p-6 md:grid-cols-[1fr_1.3fr] md:p-8">
+      <section className="mt-14 grid gap-6 rounded-[28px] border border-[var(--color-hairline)] bg-[var(--color-surface-soft)] p-6 md:grid-cols-[1fr_1.3fr] md:p-8">
         <div className="flex flex-col justify-between gap-6">
           <SectionHeading title="温度地图预览" description="看见不同区域的互助活跃度、风险提醒和最近事件。" />
-          <Button className="w-fit rounded-full px-5">查看温度地图</Button>
+          <Button asChild className="w-fit rounded-full px-5">
+            <Link to="/map">查看温度地图</Link>
+          </Button>
         </div>
         <MiniMap />
-      </Link>
+      </section>
     </PageShell>
   )
 }
@@ -1440,14 +1452,18 @@ function EmptyState({ title, action, to }: { title: string; action: string; to: 
 }
 
 function MiniMap() {
+  const [selectedArea, setSelectedArea] = useState("library")
+
   return (
-    <div className="relative h-64 overflow-hidden rounded-[28px] border border-[var(--color-hairline)] bg-white">
-      {areas.slice(0, 5).map((area) => (
-        <span key={area.id} style={{ left: `${area.x}%`, top: `${area.y}%` }} className="absolute rounded-full bg-[var(--color-primary)] px-3 py-2 text-xs font-semibold text-white shadow-[0_0_0_10px_rgba(255,56,92,0.12)]">
-          {area.name}
-        </span>
-      ))}
-    </div>
+    <CampusAmap
+      areas={areas}
+      selectedAreaId={selectedArea}
+      activeTypeLabel={null}
+      onSelectArea={setSelectedArea}
+      compact
+      showControls={false}
+      className="h-72"
+    />
   )
 }
 

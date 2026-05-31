@@ -10,6 +10,9 @@ type CampusAmapProps = {
   selectedAreaId: string
   activeTypeLabel: string | null
   onSelectArea: (id: string) => void
+  className?: string
+  compact?: boolean
+  showControls?: boolean
 }
 
 type MarkerRecord = {
@@ -22,23 +25,32 @@ type AMapWithControls = typeof AMap & {
   ToolBar: new (options?: { position?: string }) => AMap.Control
 }
 
-function createMarkerContent(area: Area, selected: boolean) {
+function createMarkerContent(area: Area, selected: boolean, compact: boolean) {
   const el = document.createElement("button")
   el.type = "button"
   el.className = [
-    "group relative min-w-[112px] rounded-2xl border bg-white px-3 py-2 text-left shadow-[0_14px_30px_rgba(15,23,42,0.18)] transition",
+    "group relative rounded-2xl border bg-white text-left shadow-[0_14px_30px_rgba(15,23,42,0.18)] transition",
+    compact ? "min-w-[88px] px-2.5 py-2" : "min-w-[112px] px-3 py-2",
     selected ? "border-[#ff385c] ring-4 ring-[#ff385c]/15" : "border-white/90 hover:border-[#ff385c]",
   ].join(" ")
   el.innerHTML = `
     <span class="absolute -right-1 -top-1 size-4 rounded-full bg-[#ff385c] shadow-[0_0_0_10px_rgba(255,56,92,0.14)]"></span>
-    <strong class="block text-sm text-[#1f2937]">${area.name}</strong>
+    <strong class="block ${compact ? "text-xs" : "text-sm"} text-[#1f2937]">${area.name}</strong>
     <span class="mt-1 block text-xs text-[#6b7280]">${area.todayCount} 次互助</span>
-    <span class="mt-1 block text-lg font-bold text-[#ff385c]">${area.temperatureIndex}</span>
+    <span class="mt-1 block ${compact ? "text-base" : "text-lg"} font-bold text-[#ff385c]">${area.temperatureIndex}</span>
   `
   return el
 }
 
-export function CampusAmap({ areas, selectedAreaId, activeTypeLabel, onSelectArea }: CampusAmapProps) {
+export function CampusAmap({
+  areas,
+  selectedAreaId,
+  activeTypeLabel,
+  onSelectArea,
+  className,
+  compact = false,
+  showControls = true,
+}: CampusAmapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<AMap.Map | null>(null)
   const markersRef = useRef<MarkerRecord[]>([])
@@ -65,14 +77,17 @@ export function CampusAmap({ areas, selectedAreaId, activeTypeLabel, onSelectAre
 
         const map = new AMap.Map(container, {
           center: CAMPUS_MAP_CENTER,
-          zoom: CAMPUS_MAP_ZOOM,
+          zoom: compact ? CAMPUS_MAP_ZOOM - 0.35 : CAMPUS_MAP_ZOOM,
           viewMode: "2D",
           mapStyle: "amap://styles/fresh",
         })
         const AMapControls = AMap as AMapWithControls
 
-        map.addControl(new AMapControls.Scale())
-        map.addControl(new AMapControls.ToolBar({ position: "RB" }))
+        if (showControls) {
+          map.addControl(new AMapControls.Scale())
+          map.addControl(new AMapControls.ToolBar({ position: "RB" }))
+        }
+
         mapRef.current = map
         setStatus("ready")
       })
@@ -92,7 +107,7 @@ export function CampusAmap({ areas, selectedAreaId, activeTypeLabel, onSelectAre
       mapRef.current?.destroy()
       mapRef.current = null
     }
-  }, [])
+  }, [compact, showControls])
 
   useEffect(() => {
     const map = mapRef.current
@@ -107,7 +122,7 @@ export function CampusAmap({ areas, selectedAreaId, activeTypeLabel, onSelectAre
         position: area.lngLat,
         anchor: "bottom-center",
         offset: new AMap.Pixel(0, -6),
-        content: createMarkerContent(area, area.id === selectedAreaId),
+        content: createMarkerContent(area, area.id === selectedAreaId, compact),
         zIndex: area.id === selectedAreaId ? 120 : 100,
       })
 
@@ -120,7 +135,7 @@ export function CampusAmap({ areas, selectedAreaId, activeTypeLabel, onSelectAre
 
       return { areaId: area.id, marker }
     })
-  }, [activeTypeLabel, areas, onSelectArea, selectedAreaId, status])
+  }, [activeTypeLabel, areas, compact, onSelectArea, selectedAreaId, status])
 
   useEffect(() => {
     const map = mapRef.current
@@ -132,7 +147,7 @@ export function CampusAmap({ areas, selectedAreaId, activeTypeLabel, onSelectAre
   }, [areas, selectedAreaId])
 
   return (
-    <div className="relative h-[520px] overflow-hidden rounded-[28px] border border-[var(--color-hairline)] bg-white">
+    <div className={cn("relative h-[520px] overflow-hidden rounded-[28px] border border-[var(--color-hairline)] bg-white", className)}>
       <div ref={containerRef} className={cn("absolute inset-0", status !== "ready" && "opacity-0")} />
 
       {status === "loading" || status === "idle" ? (
