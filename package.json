@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@amap/amap-jsapi-loader": "^1.0.1",
+    "@amap/amap-jsapi-types": "^0.0.15",
     "@fontsource-variable/geist": "^5.2.9",
     "@fontsource/inter": "^5.2.8",
     "@google/genai": "^2.7.0",

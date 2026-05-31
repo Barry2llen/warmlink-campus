@@ -68,6 +68,7 @@ export interface Event {
 export interface Area {
   id: string
   name: string
+  lngLat: [number, number]
   x: number
   y: number
   width: number

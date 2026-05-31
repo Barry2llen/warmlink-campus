@@ -28,6 +28,7 @@ import {
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { CampusAmap } from "@/components/CampusAmap"
 import { detectPrivacy, redactPrivacy } from "@/lib/privacy"
 import type { Area, Event, EventStatus, EventType, RiskAlert, Urgency, User } from "@/lib/types"
 import { cn } from "@/lib/utils"
@@ -106,12 +107,14 @@ const users: User[] = [
 ]
 
 const areas: Area[] = [
-  { id: "library", name: "图书馆", x: 45, y: 30, width: 18, height: 14, todayCount: 28, activeCount: 9, hotTypes: ["学习资料", "生活物资"], avgResponseMin: 8, temperatureIndex: 92, recentEvents: ["借用雨伞", "计算机网络复习资料"] },
-  { id: "dorm", name: "宿舍区", x: 15, y: 55, width: 22, height: 20, todayCount: 34, activeCount: 12, hotTypes: ["闲置物品", "临时求助"], avgResponseMin: 11, temperatureIndex: 88, recentEvents: ["闲置台灯赠送", "搬运行李"] },
-  { id: "canteen", name: "一食堂", x: 65, y: 58, width: 16, height: 12, todayCount: 16, activeCount: 5, hotTypes: ["临时求助", "公益帮扶"], avgResponseMin: 6, temperatureIndex: 76, recentEvents: ["帮带晚饭", "公益餐盒回收"] },
-  { id: "teaching", name: "教学楼", x: 58, y: 18, width: 22, height: 15, todayCount: 19, activeCount: 7, hotTypes: ["学习资料", "安全提醒"], avgResponseMin: 10, temperatureIndex: 81, recentEvents: ["实验报告模板", "晚间结伴回宿舍"] },
-  { id: "express", name: "快递站", x: 30, y: 18, width: 13, height: 12, todayCount: 12, activeCount: 4, hotTypes: ["临时求助"], avgResponseMin: 9, temperatureIndex: 68, recentEvents: ["代取快递", "借小推车"] },
-  { id: "stadium", name: "体育场", x: 75, y: 34, width: 16, height: 16, todayCount: 10, activeCount: 3, hotTypes: ["公益帮扶"], avgResponseMin: 15, temperatureIndex: 61, recentEvents: ["夜跑搭子", "志愿活动集合"] },
+  { id: "library", name: "图书馆", lngLat: [115.82794, 28.65332], x: 45, y: 30, width: 18, height: 14, todayCount: 28, activeCount: 9, hotTypes: ["学习资料", "生活物资"], avgResponseMin: 8, temperatureIndex: 92, recentEvents: ["借用雨伞", "计算机网络复习资料"] },
+  { id: "dorm", name: "宿舍区", lngLat: [115.82395, 28.6505], x: 15, y: 55, width: 22, height: 20, todayCount: 34, activeCount: 12, hotTypes: ["闲置物品", "临时求助"], avgResponseMin: 11, temperatureIndex: 88, recentEvents: ["闲置台灯赠送", "搬运行李"] },
+  { id: "canteen", name: "一食堂", lngLat: [115.82998, 28.65095], x: 65, y: 58, width: 16, height: 12, todayCount: 16, activeCount: 5, hotTypes: ["临时求助", "公益帮扶"], avgResponseMin: 6, temperatureIndex: 76, recentEvents: ["帮带晚饭", "公益餐盒回收"] },
+  { id: "teaching", name: "教学楼", lngLat: [115.82957, 28.65385], x: 58, y: 18, width: 22, height: 15, todayCount: 19, activeCount: 7, hotTypes: ["学习资料", "安全提醒"], avgResponseMin: 10, temperatureIndex: 81, recentEvents: ["实验报告模板", "晚间结伴回宿舍"] },
+  { id: "express", name: "快递站", lngLat: [115.82495, 28.654], x: 30, y: 18, width: 13, height: 12, todayCount: 12, activeCount: 4, hotTypes: ["临时求助"], avgResponseMin: 9, temperatureIndex: 68, recentEvents: ["代取快递", "借小推车"] },
+  { id: "stadium", name: "体育场", lngLat: [115.8311, 28.6523], x: 75, y: 34, width: 16, height: 16, todayCount: 10, activeCount: 3, hotTypes: ["公益帮扶"], avgResponseMin: 15, temperatureIndex: 61, recentEvents: ["夜跑搭子", "志愿活动集合"] },
+  { id: "gate", name: "校门口", lngLat: [115.82248, 28.65427], x: 8, y: 36, width: 14, height: 12, todayCount: 14, activeCount: 4, hotTypes: ["临时求助", "安全提醒"], avgResponseMin: 7, temperatureIndex: 73, recentEvents: ["新生问路", "晚间返校提醒"] },
+  { id: "activity", name: "学生活动中心", lngLat: [115.8266, 28.6519], x: 42, y: 64, width: 18, height: 14, todayCount: 18, activeCount: 6, hotTypes: ["公益帮扶", "闲置物品"], avgResponseMin: 12, temperatureIndex: 79, recentEvents: ["社团物资借用", "公益活动集合"] },
 ]
 
 const initialEvents: Event[] = [
@@ -868,7 +871,15 @@ function DetailPage({ events, onRespond }: { events: Event[]; onRespond: (id: st
 function MapPage({ events }: { events: Event[] }) {
   const [params] = useSearchParams()
   const [selected, setSelected] = useState(params.get("area") ?? areas[0].id)
-  const area = getArea(selected)
+  const [activeType, setActiveType] = useState<EventType | "all">("all")
+  const activeTypeLabel = activeType === "all" ? null : eventTypeMeta[activeType].label
+  const visibleAreas = useMemo(
+    () => (activeTypeLabel ? areas.filter((item) => item.hotTypes.includes(activeTypeLabel)) : areas),
+    [activeTypeLabel],
+  )
+
+  const selectedAreaId = visibleAreas.some((item) => item.id === selected) ? selected : visibleAreas[0]?.id ?? areas[0].id
+  const area = getArea(selectedAreaId)
   const areaEvents = events.filter((event) => event.areaId === area.id)
 
   return (
@@ -878,31 +889,13 @@ function MapPage({ events }: { events: Event[] }) {
           <SectionHeading title="校园温度地图" description="用热力点位看见校园互助正在发生的位置、类型和响应速度。" />
           <div className="rounded-[32px] border border-[var(--color-hairline)] bg-[var(--color-surface-soft)] p-4 md:p-6">
             <div className="mb-4 flex flex-wrap gap-2">
+              <FilterPill active={activeType === "all"} onClick={() => setActiveType("all")}>全部</FilterPill>
               {(Object.keys(eventTypeMeta) as EventType[]).map((type) => (
-                <Badge key={type} tone={eventTypeMeta[type].tone}>{eventTypeMeta[type].label}</Badge>
+                <FilterPill key={type} active={activeType === type} onClick={() => setActiveType(type)}>{eventTypeMeta[type].label}</FilterPill>
               ))}
             </div>
-            <div className="relative h-[520px] overflow-hidden rounded-[28px] border border-[var(--color-hairline)] bg-white">
-              <div className="absolute inset-6 rounded-[32px] border border-dashed border-[var(--color-hairline)] bg-[linear-gradient(120deg,#fff_0%,#fff7f8_45%,#fff_100%)]" />
-              <div className="absolute left-[8%] top-[8%] h-[84%] w-[84%] rounded-[40px] border border-[var(--color-hairline-soft)]" />
-              {areas.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => setSelected(item.id)}
-                  style={{ left: `${item.x}%`, top: `${item.y}%`, width: `${item.width}%`, height: `${item.height}%` }}
-                  className={cn(
-                    "absolute flex flex-col items-center justify-center rounded-3xl border bg-white p-2 text-center shadow-[0_10px_28px_rgba(0,0,0,0.08)] transition hover:-translate-y-1",
-                    selected === item.id ? "border-[var(--color-primary)] ring-4 ring-[#ff385c]/10" : "border-[var(--color-hairline)]",
-                  )}
-                >
-                  <span className="absolute -top-2 right-4 size-4 rounded-full bg-[var(--color-primary)] opacity-80 shadow-[0_0_0_10px_rgba(255,56,92,0.12)]" />
-                  <strong className="text-sm">{item.name}</strong>
-                  <span className="mt-1 text-xs text-[var(--color-muted)]">{item.todayCount} 次互助</span>
-                  <span className="mt-1 text-lg font-bold text-[var(--color-primary)]">{item.temperatureIndex}</span>
-                </button>
-              ))}
-            </div>
+            <CampusAmap areas={visibleAreas} selectedAreaId={selectedAreaId} activeTypeLabel={activeTypeLabel} onSelectArea={setSelected} />
+            <p className="mt-3 text-xs text-[var(--color-muted)]">底图由高德地图 JS API 2.0 提供，点位为南昌航空大学前湖校区演示坐标，可在配置中替换为精确建筑坐标。</p>
           </div>
         </section>
         <aside className="flex flex-col gap-4">
